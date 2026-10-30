@@ -1,0 +1,9 @@
+flask
+librosa
+soundfile
+scikit-learn
+numpy
+pandas
+matplotlib
+joblib
+tqdm

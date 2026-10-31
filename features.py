@@ -80,4 +80,10 @@ def file_to_features(path):
 def signal_to_features(y):
     """Mengekstrak fitur dari sinyal live mikrofon (16 kHz, 5 detik) saat inferensi web."""
     y = remove_silence(y)
+    if len(y) == 0:
+        y = np.zeros(CHUNK_LEN, dtype=np.float32)
+    elif len(y) < CHUNK_LEN:
+        y = np.pad(y, (0, CHUNK_LEN - len(y)), mode="wrap")
+    else:
+        y = y[:CHUNK_LEN]
     return extract_features(y).reshape(1, -1)

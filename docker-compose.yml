@@ -1,0 +1,12 @@
+services:
+  audio_psd_svm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audio_psd_svm_kel10
+    ports:
+      - "8010:8010"
+    restart: unless-stopped
+    environment:
+      - PORT=8010
+      - PYTHONUNBUFFERED=1

@@ -12,12 +12,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy seluruh file project ke dalam container
 COPY . /app
 
-# Konfigurasi environment untuk Flask
+# Konfigurasi environment untuk Flask, Numba, dan Matplotlib
 ENV PORT=8010
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=8010
 ENV PYTHONUNBUFFERED=1
+ENV NUMBA_CACHE_DIR=/tmp
+ENV MPLCONFIGDIR=/tmp
 
 # Port untuk Kelompok 10
 EXPOSE 8010

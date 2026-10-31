@@ -1058,7 +1058,7 @@ header {
 <script>
 const WINDOW_SEC = 5;
 const TOTAL_BARS = 200; // 200 bar sepanjang durasi 5 detik (40 bar per detik)
-const API_BASE = (window.location.port === '8010') ? '' : 'http://localhost:8010';
+// Pure relative paths used for production HTTPS / domain support
 let ctx = null, stream = null, proc = null;
 let buf = [], collected = 0, running = false, history = [], total = 0;
 let isPredicting = false;
@@ -1097,7 +1097,7 @@ function setStatus(stateClass, label) {
   $('banner-text').textContent = label;
 }
 
-const defaultAlarmAudio = new Audio(`${API_BASE}/alarm.mp3`);
+const defaultAlarmAudio = new Audio(`/alarm.mp3`);
 let alarmTimeout = null;
 let isAlarmActive = false;
 let alarmCooldownTimer = null;
@@ -1609,7 +1609,7 @@ async function sendChunk() {
 
   const currentTh = getThreshold();
   try {
-    const res = await fetch(`${API_BASE}/predict?sr=${ctx.sampleRate}&th=${currentTh}`, {
+    const res = await fetch(`/predict?sr=${ctx.sampleRate}&th=${currentTh}`, {
       method: 'POST',
       body: merged.buffer
     });
@@ -1618,10 +1618,8 @@ async function sendChunk() {
     handleResult(data);
   } catch (err) {
     let msg = err.message;
-    if (err.name === 'TypeError' || (err.message && err.message.includes('fetch'))) {
-      msg = 'Koneksi ke backend Flask terputus (Failed to fetch). Pastikan "python app.py" sedang berjalan di terminal dan buka aplikasi melalui http://localhost:8010';
-    }
-    $('err').textContent = 'Gagal memproses audio: ' + msg;
+    console.error('Error saat fetch /predict:', err);
+    $('err').textContent = 'Gagal memproses audio: ' + (err.message || err);
   } finally {
     isPredicting = false;
     if (running && pill) {
@@ -1718,7 +1716,7 @@ async function analyzeFile() {
   formData.append('th', getThreshold());
 
   try {
-    const res = await fetch(`${API_BASE}/predict_file`, {
+    const res = await fetch(`/predict_file`, {
       method: 'POST',
       body: formData
     });
@@ -1755,7 +1753,7 @@ window.addEventListener('load', () => {
   if (window.location.protocol === 'file:') {
     const noticeDiv = document.createElement('div');
     noticeDiv.style.cssText = 'background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; padding: 10px 14px; border-radius: 8px; font-size: 0.8125rem; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
-    noticeDiv.innerHTML = '<span>⚠️ Anda membuka file secara langsung (<code>file://</code>). Disarankan membuka via peramban di <a href="http://localhost:8010" style="color:#38bdf8; font-weight:bold; text-decoration:underline;">http://localhost:8010</a> agar fitur mikrofon dan API terhubung optimal.</span><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-weight:bold; padding:2px 6px;">✕</button>';
+    noticeDiv.innerHTML = '<span>⚠️ Anda membuka file secara langsung (<code>file://</code>). Disarankan membuka via peramban di peramban web agar fitur mikrofon dan API terhubung optimal.</span><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-weight:bold; padding:2px 6px;">✕</button>';
     const container = document.querySelector('.container') || document.body;
     container.insertBefore(noticeDiv, container.firstChild);
   }

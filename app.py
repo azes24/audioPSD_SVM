@@ -2,12 +2,17 @@
 Laboratorium Teknik Informatika UTM - PSD Kelompok 10
 Jalankan: python app.py -> http://localhost:8010
 """
+import os
+import sys
+
+# Konfigurasi direktori cache numba & matplotlib agar aman di container Docker
+os.environ["NUMBA_CACHE_DIR"] = "/tmp"
+os.environ["MPLCONFIGDIR"] = "/tmp"
+
 import csv
 import datetime
 import io
 import math
-import os
-import sys
 import tempfile
 import warnings
 from pathlib import Path
@@ -58,6 +63,7 @@ if not template_dir.is_dir():
 
 app = Flask(__name__, template_folder=str(template_dir))
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB buffer & upload limit
 
 
 @app.after_request
@@ -230,4 +236,4 @@ def predict_file():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8010))
     print(f"Starting Smart Noise Alert System (Flask) on port {port}...")
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

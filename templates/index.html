@@ -835,9 +835,8 @@ header {
       <p>Sistem Pemantauan dan Deteksi Kebisingan Audio Ruang Lab</p>
     </div>
     <div class="system-meta">
-      <span class="meta-tag">Lab: <strong>Teknik Informatika UTM</strong></span>
-      <span class="meta-tag">Model: <strong>{{ model_name or 'Ensemble Voting' }}</strong></span>
-      <span class="meta-tag">Ambang Aktif: <strong id="meta-th">{{ threshold or '0.823' }}</strong></span>
+      <span class="meta-tag">Model: <strong>{{ model_name or 'SVM' }}</strong></span>
+      <span class="meta-tag">Akurasi Model Hasil Uji Coba: <strong>{{ accuracy or '89%' }}</strong></span>
     </div>
   </header>
 
@@ -847,7 +846,7 @@ header {
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">Pemantauan Mikrofon Langsung</h2>
-          <span class="card-subtitle">Segmen 3 Detik</span>
+          <span class="card-subtitle">Segmen 5 Detik</span>
         </div>
 
         <div id="banner" class="banner">
@@ -864,7 +863,7 @@ header {
                 <span class="rec-dot"></span>
                 <span id="rec-pill-text">STANDBY</span>
               </span>
-              <span class="rec-time" id="rec-time-label">0.0s / 3.0s</span>
+              <span class="rec-time" id="rec-time-label">0.0s / 5.0s</span>
             </div>
             <div class="visualizer-meta-right">
               <span>Sinyal Input: <strong class="live-db" id="live-db-badge">— dBFS</strong></span>
@@ -883,7 +882,9 @@ header {
               <span>0.0s</span>
               <span>1.0s</span>
               <span>2.0s</span>
-              <span>3.0s (Selesai Chunk)</span>
+              <span>3.0s</span>
+              <span>4.0s</span>
+              <span>5.0s (Selesai Chunk)</span>
             </div>
           </div>
 
@@ -891,7 +892,7 @@ header {
             <div class="last-eval-header">
               <span class="last-eval-title">
                 <strong>Profil Segmen Terakhir:</strong>
-                <span id="last-seg-title">Segmen #1 (3.0 Detik)</span>
+                <span id="last-seg-title">Segmen #1 (5.0 Detik)</span>
               </span>
               <span class="last-eval-verdict ok" id="last-seg-badge">TENANG (0.0%)</span>
             </div>
@@ -903,6 +904,8 @@ header {
               <span>1.0s</span>
               <span>2.0s</span>
               <span>3.0s</span>
+              <span>4.0s</span>
+              <span>5.0s</span>
             </div>
           </div>
         </div>
@@ -929,7 +932,7 @@ header {
           </div>
           <div class="meter-track">
             <div class="meter-fill" id="prob-fill"></div>
-            <div class="threshold-marker" id="th-marker" style="left: calc({{ threshold or 0.823 }} * 100%);"></div>
+            <div class="threshold-marker" id="th-marker" style="left: calc({{ threshold or 0.6 }} * 100%);"></div>
           </div>
         </div>
 
@@ -949,7 +952,7 @@ header {
         <div class="err-msg" id="err"></div>
 
         <div class="notice">
-          Pemrosesan audio dikelompokkan per segmen 3 detik pada 16 kHz. Filter browser (echo cancellation, noise suppression, AGC) dimatikan secara terprogram agar karakteristik sinyal identik dengan dataset pelatihan.
+          Pemrosesan audio dikelompokkan per segmen 5 detik pada 16 kHz. Filter browser (echo cancellation, noise suppression, AGC) dimatikan secara terprogram agar karakteristik sinyal identik dengan dataset pelatihan.
         </div>
       </section>
 
@@ -962,21 +965,21 @@ header {
         <div class="config-box">
           <div class="control-row">
             <span>Ambang batas keputusan:</span>
-            <input id="thInput" class="input-num" type="number" min="0.30" max="0.95" step="0.05" value="{{ threshold or '0.823' }}" style="width:62px;">
-            <span style="font-size:0.75rem;color:var(--muted)" id="thPctLabel">({{ ((threshold or 0.823)|float * 100)|round(0) }}%)</span>
+            <input id="thInput" class="input-num" type="number" min="0.30" max="0.95" step="0.05" value="{{ threshold or '0.6' }}" style="width:62px;">
+            <span style="font-size:0.75rem;color:var(--muted)" id="thPctLabel">({{ (((threshold or 0.6)|float * 100)|round(0))|int }}%)</span>
           </div>
 
           <div class="presets-row">
-            <button type="button" class="btn-chip" onclick="setThreshold(0.55)">Sensitif (0.55)</button>
-            <button type="button" class="btn-chip" onclick="setThreshold(0.65)">Moderat (0.65)</button>
-            <button type="button" class="btn-chip" onclick="setThreshold({{ threshold or 0.823 }})">Bawaan Model ({{ threshold or '0.823' }})</button>
+            <button type="button" class="btn-chip" onclick="setThreshold(0.50)">Sensitif (0.50)</button>
+            <button type="button" class="btn-chip" onclick="setThreshold({{ threshold or 0.6 }})">Bawaan SVM ({{ threshold or '0.6' }})</button>
+            <button type="button" class="btn-chip" onclick="setThreshold(0.70)">Ketat (0.70)</button>
           </div>
 
           <div class="control-row" style="margin-top: 4px;">
             <span>Alarm aktif bila</span>
-            <input id="needK" class="input-num" type="number" min="1" max="10" value="2">
+            <input id="needK" class="input-num" type="number" min="1" max="10" value="1">
             <span>dari</span>
-            <input id="winM" class="input-num" type="number" min="1" max="20" value="3">
+            <input id="winM" class="input-num" type="number" min="1" max="20" value="1">
             <span>chunk terakhir berisik</span>
           </div>
 
@@ -984,6 +987,24 @@ header {
             <input id="sound" type="checkbox" checked>
             <span>Aktifkan sinyal audio alarm</span>
           </label>
+
+          <div id="alarmSettingsBox" style="margin-top: 10px; padding: 10px 12px; background: rgba(15, 23, 42, 0.55); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <span style="font-size:0.75rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+                <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--ok);"></span>
+                Suara Alarm: <strong>alarm.mp3</strong> <span style="font-size:0.7rem; color:var(--muted);">(Durasi 3 Detik)</span>
+              </span>
+              <button type="button" id="btnTestAlarm" class="btn-chip" style="margin:0;">🔊 Uji Suara</button>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; font-size:0.75rem; color:var(--muted); border-top:1px dashed var(--border); padding-top:8px;">
+              <span>Volume Alarm:</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <input id="alarmVolume" type="range" min="0" max="1" step="0.05" value="0.9" style="width:75px; accent-color:var(--primary); cursor:pointer;">
+                <span id="alarmVolumeLabel" style="width:32px; font-variant-numeric:tabular-nums;">90%</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);">
@@ -1035,23 +1056,24 @@ header {
 </div>
 
 <script>
-const WINDOW_SEC = 3;
-const TOTAL_BARS = 120; // 120 bar sepanjang durasi 3 detik (40 bar per detik)
+const WINDOW_SEC = 5;
+const TOTAL_BARS = 200; // 200 bar sepanjang durasi 5 detik (40 bar per detik)
+const API_BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
 let ctx = null, stream = null, proc = null;
 let buf = [], collected = 0, running = false, history = [], total = 0;
 let isPredicting = false;
 let animId = null, analyser = null, analyserData = null;
 
-// Bar amplitude envelope untuk segmen 3 detik yang sedang direkam
+// Bar amplitude envelope untuk segmen 5 detik yang sedang direkam
 let currentChunkBars = [];
-// Simpanan 120 bar untuk segmen terakhir yang telah selesai dievaluasi model
+// Simpanan 200 bar untuk segmen terakhir yang telah selesai dievaluasi model
 let lastEvaluatedBars = null;
 
 const $ = id => document.getElementById(id);
 
 function getThreshold() {
   const val = parseFloat($('thInput').value);
-  return isNaN(val) ? 0.823 : Math.min(0.99, Math.max(0.1, val));
+  return isNaN(val) ? 0.6 : Math.min(0.99, Math.max(0.1, val));
 }
 
 function setThreshold(val) {
@@ -1064,7 +1086,7 @@ function updateThresholdUI() {
   const pct = (th * 100).toFixed(0);
   $('th-marker').style.left = (th * 100) + '%';
   $('thPctLabel').textContent = '(' + pct + '%)';
-  $('meta-th').textContent = th.toFixed(3);
+  if ($('meta-th')) $('meta-th').textContent = th.toFixed(3);
 }
 
 $('thInput').addEventListener('input', updateThresholdUI);
@@ -1075,27 +1097,117 @@ function setStatus(stateClass, label) {
   $('banner-text').textContent = label;
 }
 
+const defaultAlarmAudio = new Audio(`${API_BASE}/alarm.mp3`);
+let alarmTimeout = null;
+let isAlarmActive = false;
+let alarmCooldownTimer = null;
+
+function initCustomAlarm() {
+  try {
+    const savedVol = localStorage.getItem('custom_alarm_vol') || '0.9';
+    if ($('alarmVolume')) {
+      $('alarmVolume').value = savedVol;
+      $('alarmVolumeLabel').textContent = Math.round(parseFloat(savedVol) * 100) + '%';
+      if (defaultAlarmAudio) defaultAlarmAudio.volume = parseFloat(savedVol);
+    }
+  } catch (e) {
+    console.warn('Gagal membaca volume alarm:', e);
+  }
+}
+
 function beep() {
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = ctx || new AudioCtx();
+  const vol = $('alarmVolume') ? parseFloat($('alarmVolume').value) : 0.8;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.value = 880;
-  gain.gain.setValueAtTime(0.2, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+  gain.gain.setValueAtTime(vol * 0.25, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(audioCtx.destination);
   osc.start();
-  osc.stop(ctx.currentTime + 0.35);
+  osc.stop(audioCtx.currentTime + 0.35);
+}
+
+function triggerAlarmSound(isManualTest = false) {
+  if (!$('sound').checked && !isManualTest) return;
+  const vol = $('alarmVolume') ? parseFloat($('alarmVolume').value) : 0.9;
+
+  // Aktifkan proteksi: abaikan input mikrofon selama alarm berbunyi
+  isAlarmActive = true;
+  if (alarmTimeout) clearTimeout(alarmTimeout);
+  if (alarmCooldownTimer) clearTimeout(alarmCooldownTimer);
+
+  // Buang sampel audio berjalan yang sempat menangkap awal bunyi alarm
+  buf = [];
+  collected = 0;
+  currentChunkBars = [];
+
+  const pill = $('rec-pill');
+  if (running && pill) {
+    pill.className = 'rec-pill evaluating';
+    $('rec-pill-text').textContent = 'ALARM AKTIF (SUARA SENDIRI DIABAIKAN)';
+  }
+
+  try {
+    defaultAlarmAudio.pause();
+    defaultAlarmAudio.currentTime = 0;
+    defaultAlarmAudio.volume = vol;
+    const playPromise = defaultAlarmAudio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.warn('Gagal memutar alarm.mp3, beralih ke beep:', e);
+        beep();
+      });
+    }
+
+    // 1. Hentikan audio tepat setelah 3.0 detik
+    alarmTimeout = setTimeout(() => {
+      defaultAlarmAudio.pause();
+      defaultAlarmAudio.currentTime = 0;
+    }, 3000);
+
+    // 2. Berikan jeda pendinginan (cooldown 3.5s: 3s audio + 0.5s gema ruangan hilang)
+    // agar rekaman berikutnya bersih dari suara alarm
+    alarmCooldownTimer = setTimeout(() => {
+      buf = [];
+      collected = 0;
+      currentChunkBars = [];
+      isAlarmActive = false;
+
+      if (running && pill) {
+        pill.className = 'rec-pill recording';
+        $('rec-pill-text').textContent = `MEREKAM SEGMEN #${total + 1}`;
+      }
+    }, 3500);
+
+  } catch (e) {
+    beep();
+    alarmCooldownTimer = setTimeout(() => {
+      buf = [];
+      collected = 0;
+      currentChunkBars = [];
+      isAlarmActive = false;
+    }, 1000);
+  }
 }
 
 function alarm() {
-  if ($('sound').checked) {
-    beep();
-    setTimeout(beep, 400);
-    setTimeout(beep, 800);
-  }
+  triggerAlarmSound(false);
 }
+
+$('alarmVolume').addEventListener('input', (e) => {
+  const vol = parseFloat(e.target.value);
+  $('alarmVolumeLabel').textContent = Math.round(vol * 100) + '%';
+  if (defaultAlarmAudio) defaultAlarmAudio.volume = vol;
+  try { localStorage.setItem('custom_alarm_vol', vol.toString()); } catch (e) {}
+});
+
+$('btnTestAlarm').addEventListener('click', () => {
+  triggerAlarmSound(true);
+});
 
 function resizeCanvas(canvas) {
   if (!canvas) return;
@@ -1119,11 +1231,11 @@ function drawTimelineGrid(ctx2d, w, h, isMini) {
   ctx2d.moveTo(0, h / 2);
   ctx2d.lineTo(w, h / 2);
 
-  // Garis vertikal pembatas 1.0 detik dan 2.0 detik
-  const col1 = w / 3;
-  const col2 = (2 * w) / 3;
-  ctx2d.moveTo(col1, 0); ctx2d.lineTo(col1, h);
-  ctx2d.moveTo(col2, 0); ctx2d.lineTo(col2, h);
+  // Garis vertikal pembatas per detik
+  for (let s = 1; s < WINDOW_SEC; s++) {
+    const col = (s * w) / WINDOW_SEC;
+    ctx2d.moveTo(col, 0); ctx2d.lineTo(col, h);
+  }
   ctx2d.stroke();
 
   // Garis bantu putus-putus
@@ -1141,10 +1253,11 @@ function drawTimelineGrid(ctx2d, w, h, isMini) {
     ctx2d.textAlign = 'left';
     ctx2d.fillText('0.0s', 6, h - 6);
     ctx2d.textAlign = 'center';
-    ctx2d.fillText('1.0s', col1, h - 6);
-    ctx2d.fillText('2.0s', col2, h - 6);
+    for (let s = 1; s < WINDOW_SEC; s++) {
+      ctx2d.fillText(`${s}.0s`, (s * w) / WINDOW_SEC, h - 6);
+    }
     ctx2d.textAlign = 'right';
-    ctx2d.fillText('3.0s (Selesai)', w - 6, h - 6);
+    ctx2d.fillText(`${WINDOW_SEC}.0s (Selesai)`, w - 6, h - 6);
   }
 }
 
@@ -1175,7 +1288,7 @@ function drawIdleWaveform() {
   ctx2d.fillStyle = 'rgba(148, 163, 184, 0.7)';
   ctx2d.font = '12px sans-serif';
   ctx2d.textAlign = 'center';
-  ctx2d.fillText('Grafik Rekaman 3 Detik (0.0s – 3.0s) • Tekan "Mulai Pemantauan"', w / 2, h / 2 - 12);
+  ctx2d.fillText('Grafik Rekaman 5 Detik (0.0s – 5.0s) • Tekan "Mulai Pemantauan"', w / 2, h / 2 - 12);
   ctx2d.restore();
 }
 
@@ -1249,7 +1362,7 @@ function startVisualizer() {
     const barSpacing = w / TOTAL_BARS;
     const barW = Math.max(2, barSpacing - 1.2);
 
-    // Gambar bar sepanjang 3 detik
+    // Gambar bar sepanjang 5 detik
     for (let i = 0; i < TOTAL_BARS; i++) {
       const bx = i * barSpacing;
       if (i < currentChunkBars.length) {
@@ -1269,13 +1382,13 @@ function startVisualizer() {
         }
         ctx2d.fillRect(bx, by, barW, barH);
       } else {
-        // Area waktu 3 detik yang belum dicapai playhead
+        // Area waktu 5 detik yang belum dicapai playhead
         ctx2d.fillStyle = '#1e293b';
         ctx2d.fillRect(bx, midY - 1, barW, 2);
       }
     }
 
-    // Playhead vertikal yang menyapu dari 0 detik ke 3 detik
+    // Playhead vertikal yang menyapu dari 0 detik ke 5 detik
     const recordedRatio = Math.min(1, currentChunkBars.length / TOTAL_BARS);
     const playheadX = recordedRatio * w;
 
@@ -1354,13 +1467,17 @@ async function start() {
   proc = ctx.createScriptProcessor(4096, 1, 1);
   proc.onaudioprocess = ev => {
     if (!running) return;
+    if (isAlarmActive) {
+      // Alarm sedang membunyikan speaker sendiri: abaikan sampel mikrofon agar tidak self-trigger!
+      return;
+    }
     const inputData = ev.inputBuffer.getChannelData(0);
     buf.push(new Float32Array(inputData));
     collected += inputData.length;
 
-    // Hitung amplitude per bar sepanjang durasi 3 detik
-    const totalSamplesIn3s = ctx.sampleRate * WINDOW_SEC;
-    const samplesPerBar = Math.max(1, Math.floor(totalSamplesIn3s / TOTAL_BARS));
+    // Hitung amplitude per bar sepanjang durasi 5 detik
+    const totalSamplesInWindow = ctx.sampleRate * WINDOW_SEC;
+    const samplesPerBar = Math.max(1, Math.floor(totalSamplesInWindow / TOTAL_BARS));
 
     for (let i = 0; i < inputData.length; i += samplesPerBar) {
       if (currentChunkBars.length >= TOTAL_BARS) break;
@@ -1413,6 +1530,19 @@ async function start() {
 function stop() {
   running = false;
   isPredicting = false;
+  isAlarmActive = false;
+  if (alarmTimeout) {
+    clearTimeout(alarmTimeout);
+    alarmTimeout = null;
+  }
+  if (alarmCooldownTimer) {
+    clearTimeout(alarmCooldownTimer);
+    alarmCooldownTimer = null;
+  }
+  if (defaultAlarmAudio) {
+    defaultAlarmAudio.pause();
+    defaultAlarmAudio.currentTime = 0;
+  }
   if (animId) {
     cancelAnimationFrame(animId);
     animId = null;
@@ -1438,7 +1568,7 @@ function stop() {
     pill.className = 'rec-pill';
     $('rec-pill-text').textContent = 'STANDBY';
   }
-  $('rec-time-label').textContent = '0.0s / 3.0s';
+  $('rec-time-label').textContent = '0.0s / 5.0s';
   $('segProgressFill').style.width = '0%';
   $('live-db-badge').textContent = '— dBFS';
   drawIdleWaveform();
@@ -1448,7 +1578,7 @@ async function sendChunk() {
   if (isPredicting || !running) return;
   isPredicting = true;
 
-  // Salin 120 bar lengkap dari segmen 3 detik ini untuk snapshot riwayat
+  // Salin 200 bar lengkap dari segmen 5 detik ini untuk snapshot riwayat
   lastEvaluatedBars = currentChunkBars.slice(0, TOTAL_BARS);
   currentChunkBars = []; // Reset bar untuk segmen berikutnya
 
@@ -1462,7 +1592,7 @@ async function sendChunk() {
   const lastBox = $('last-eval-box');
   if (lastBox) {
     lastBox.style.display = 'block';
-    $('last-seg-title').textContent = `Segmen #${currentSegmentNum} (3.0 Detik)`;
+    $('last-seg-title').textContent = `Segmen #${currentSegmentNum} (5.0 Detik)`;
     $('last-seg-badge').className = 'last-eval-verdict';
     $('last-seg-badge').textContent = 'MEMPROSES…';
     drawLastWaveform();
@@ -1479,7 +1609,7 @@ async function sendChunk() {
 
   const currentTh = getThreshold();
   try {
-    const res = await fetch(`/predict?sr=${ctx.sampleRate}&th=${currentTh}`, {
+    const res = await fetch(`${API_BASE}/predict?sr=${ctx.sampleRate}&th=${currentTh}`, {
       method: 'POST',
       body: merged.buffer
     });
@@ -1487,7 +1617,11 @@ async function sendChunk() {
     if (!res.ok) throw new Error(data.error || res.status);
     handleResult(data);
   } catch (err) {
-    $('err').textContent = 'Gagal memproses audio: ' + err.message;
+    let msg = err.message;
+    if (err.name === 'TypeError' || (err.message && err.message.includes('fetch'))) {
+      msg = 'Koneksi ke backend Flask terputus (Failed to fetch). Pastikan "python app.py" sedang berjalan di terminal dan buka aplikasi melalui http://localhost:5000';
+    }
+    $('err').textContent = 'Gagal memproses audio: ' + msg;
   } finally {
     isPredicting = false;
     if (running && pill) {
@@ -1498,6 +1632,7 @@ async function sendChunk() {
 }
 
 function handleResult(data) {
+  $('err').textContent = ''; // Bersihkan pesan error jika chunk berhasil diproses
   total++;
   history.push(data.noisy);
   const mWindow = Math.max(1, +$('winM').value);
@@ -1508,6 +1643,7 @@ function handleResult(data) {
 
   if (alarmTriggered) {
     setStatus('bad', 'Peringatan: Tingkat Kebisingan Melebihi Batas');
+    history = []; // Reset riwayat agar alarm tidak berulang-ulang tanpa suara bising baru
     alarm();
   } else if (data.noisy) {
     setStatus('warn', 'Waspada: Aktivitas Suara Meningkat');
@@ -1582,7 +1718,7 @@ async function analyzeFile() {
   formData.append('th', getThreshold());
 
   try {
-    const res = await fetch('/predict_file', {
+    const res = await fetch(`${API_BASE}/predict_file`, {
       method: 'POST',
       body: formData
     });
@@ -1613,12 +1749,25 @@ $('btnStart').onclick = start;
 $('btnStop').onclick = stop;
 $('btnFile').onclick = analyzeFile;
 
-window.addEventListener('load', drawIdleWaveform);
+window.addEventListener('load', () => {
+  drawIdleWaveform();
+  initCustomAlarm();
+  if (window.location.protocol === 'file:') {
+    const noticeDiv = document.createElement('div');
+    noticeDiv.style.cssText = 'background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; padding: 10px 14px; border-radius: 8px; font-size: 0.8125rem; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
+    noticeDiv.innerHTML = '<span>⚠️ Anda membuka file secara langsung (<code>file://</code>). Disarankan membuka via peramban di <a href="http://localhost:5000" style="color:#38bdf8; font-weight:bold; text-decoration:underline;">http://localhost:5000</a> agar fitur mikrofon dan API terhubung optimal.</span><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#fbbf24; cursor:pointer; font-weight:bold; padding:2px 6px;">✕</button>';
+    const container = document.querySelector('.container') || document.body;
+    container.insertBefore(noticeDiv, container.firstChild);
+  }
+});
 window.addEventListener('resize', () => {
   if (!running) drawIdleWaveform();
   if (lastEvaluatedBars) drawLastWaveform();
 });
-setTimeout(drawIdleWaveform, 100);
+setTimeout(() => {
+  drawIdleWaveform();
+  initCustomAlarm();
+}, 100);
 </script>
 </body>
 </html>

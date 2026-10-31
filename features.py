@@ -3,26 +3,30 @@ dan app.py (inference) supaya tidak ada perbedaan pra-pemrosesan."""
 import numpy as np
 import librosa
 
-SR = 16000                      # sample rate seragam
-CHUNK_SEC = 3                   # durasi chunk (detik)
-CHUNK_LEN = SR * CHUNK_SEC      # 48.000 sampel
-TOP_DB = 25                     # ambang silence removal
-MIN_CHUNK_SEC = 1.0             # sisa potongan terakhir < ini dibuang
-USE_SILENCE_REMOVAL = True      # ubah ke False untuk membandingkan
+SR = 16000                      # sample rate seragam (16 kHz)
+CHUNK_SEC = 5                   # durasi chunk analisis (detik)
+CHUNK_LEN = SR * CHUNK_SEC      # 80.000 sampel per chunk
+TOP_DB = 25                     # ambang batas pemangkasan hening
+MIN_CHUNK_SEC = 1.0             # sisa potongan terakhir < 1 detik dibuang
+USE_SILENCE_REMOVAL = True      # aktifkan pembersihan jeda sunyi
 
+# Daftar 14 Fitur Terbaik Terpilih (Hasil Seleksi Fitur ANOVA F-Score)
+# Memangkas lebih dari 55% dimensi awal (dari 32 ke 14) untuk efisiensi & akurasi optimal (~89%)
 FEATURE_NAMES = (
-    ["rms_mean", "rms_std", "centroid_mean", "centroid_std", "zcr_mean", "zcr_std"]
-    + [f"mfcc{i}_{s}" for i in range(1, 14) for s in ("mean", "std")]
-)  # total 32 fitur
+    "rms_mean", "rms_std", "zcr_mean", "mfcc1_mean", "mfcc3_mean",
+    "mfcc4_mean", "mfcc5_mean", "mfcc6_mean", "mfcc7_mean", "mfcc8_mean",
+    "mfcc11_mean", "mfcc11_std", "mfcc12_std", "mfcc13_std"
+)
 
 
 def load_audio(path):
+    """Memuat file audio menjadi format mono dengan sample rate seragam 16 kHz."""
     y, _ = librosa.load(path, sr=SR, mono=True)
     return y
 
 
 def remove_silence(y, top_db=None):
-    """Buang bagian hening. Jika hasilnya < 0.5 detik, pakai sinyal asli."""
+    """Membuang bagian hening. Jika audio hasil potong < 0.5 detik, gunakan sinyal asli."""
     if not USE_SILENCE_REMOVAL:
         return y
     intervals = librosa.effects.split(y, top_db=top_db or TOP_DB)
@@ -33,7 +37,7 @@ def remove_silence(y, top_db=None):
 
 
 def make_chunks(y):
-    """Potong jadi segmen 3 detik. Sisa >= 1 detik di-padding (wrap), sisanya dibuang."""
+    """Memotong audio menjadi segmen 5 detik (80.000 sampel). Sisa >= 1 detik di-pad (wrap)."""
     chunks = []
     for s in range(0, len(y), CHUNK_LEN):
         c = y[s:s + CHUNK_LEN]
@@ -45,25 +49,35 @@ def make_chunks(y):
 
 
 def extract_features(chunk):
-    """1 chunk audio -> vektor 32 fitur (mean & std)."""
+    """Mengekstrak vektor 14 fitur akustik terpilih dari satu segmen audio 5 detik."""
     rms = librosa.feature.rms(y=chunk)[0]
     cent = librosa.feature.spectral_centroid(y=chunk, sr=SR)[0]
     zcr = librosa.feature.zero_crossing_rate(chunk)[0]
     mfcc = librosa.feature.mfcc(y=chunk, sr=SR, n_mfcc=13)
-    feats = [rms.mean(), rms.std(), cent.mean(), cent.std(), zcr.mean(), zcr.std()]
-    for row in mfcc:
-        feats += [row.mean(), row.std()]
-    return np.array(feats, dtype=np.float32)
+
+    raw = {
+        "rms_mean": float(rms.mean()),
+        "rms_std": float(rms.std()),
+        "centroid_mean": float(cent.mean()),
+        "centroid_std": float(cent.std()),
+        "zcr_mean": float(zcr.mean()),
+        "zcr_std": float(zcr.std()),
+    }
+    for i in range(1, 14):
+        raw[f"mfcc{i}_mean"] = float(mfcc[i - 1].mean())
+        raw[f"mfcc{i}_std"] = float(mfcc[i - 1].std())
+
+    return np.array([raw[f] for f in FEATURE_NAMES], dtype=np.float32)
 
 
 def file_to_features(path):
-    """File audio -> matriks (n_chunk, 32). Dipakai saat membangun dataset."""
+    """Mengekstrak seluruh chunk dari sebuah file rekaman audio menjadi matriks fitur."""
     y = remove_silence(load_audio(path))
     feats = [extract_features(c) for c in make_chunks(y)]
     return np.array(feats) if feats else np.empty((0, len(FEATURE_NAMES)))
 
 
 def signal_to_features(y):
-    """Sinyal live (16 kHz, ~3 detik) -> vektor fitur (1, 32). Dipakai saat inference."""
+    """Mengekstrak fitur dari sinyal live mikrofon (16 kHz, 5 detik) saat inferensi web."""
     y = remove_silence(y)
     return extract_features(y).reshape(1, -1)
